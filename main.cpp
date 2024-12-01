@@ -1,68 +1,66 @@
 #include "glad/glad.h"
 #include <GLFW/glfw3.h>
 #include <iostream>
+using namespace std;
 
-// Window dimensions
-const GLuint WIDTH = 800, HEIGHT = 600;
+void error_callback(int error, const char* description);
+void framebuffer_size_callback(GLFWwindow* window, int width, int height); 
 
-// Function to init cd /etc/environment
-bool initOpenGL(GLFWwindow*& window) {
-    // Initialize GLFW
-    if (!glfwInit()) {
-        std::cerr << "GLFW initialization failed!" << std::endl;
-        return false;
+
+int main(){
+    glfwSetErrorCallback(error_callback);
+    if (!glfwInit())
+    {
+        cerr << "Failed to initialize GLFW" << endl;
+        return -1;
     }
+    else {    cout << "Startup successful!" << endl;}
 
-    // Create a GLFW windowed mode window and OpenGL context
-    window = glfwCreateWindow(WIDTH, HEIGHT, "GLAD + OpenGL Example", nullptr, nullptr);
-    if (!window) {
-        std::cerr << "Failed to create GLFW window!" << std::endl;
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", NULL, NULL);
+    if (!window)
+    {
+        std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
-        return false;
-    }
-
-    // Make the window's context current
-    glfwMakeContextCurrent(window);
-    glfwSwapInterval(1);  // Enable V-Sync
-
-    // Load OpenGL functions using GLAD
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        std::cerr << "Failed to initialize GLAD!" << std::endl;
-        return false;
-    }
-
-    return true;
-}
-
-// Main rendering loop
-void renderLoop(GLFWwindow* window) {
-    while (!glfwWindowShouldClose(window)) {
-        // Clear the screen with a color
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f); // Clear color
-        glClear(GL_COLOR_BUFFER_BIT); // Clear the color buffer
-
-        // Swap buffers
-        glfwSwapBuffers(window);
-
-        // Poll for and process events
-        glfwPollEvents();
-    }
-}
-
-int main() {
-    GLFWwindow* window;
-
-    // Initialize OpenGL and GLFW
-    if (!initOpenGL(window)) {
         return -1;
     }
 
-    // Main render loop
-    renderLoop(window);
+    glfwMakeContextCurrent(window);
 
-    // Cleanup and close GLFW
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return -1;
+    }
+
+    glViewport(0, 0, 800, 600);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+    while(!glfwWindowShouldClose(window))
+    {
+        glfwSwapBuffers(window);
+        glfwPollEvents();    
+    }
+
+    
     glfwDestroyWindow(window);
     glfwTerminate();
 
-    return 0;
+
 }
+
+void error_callback(int error, const char* description)
+{
+    cout << "Error: " << description << endl;
+};
+
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    glViewport(0, 0, width, height);
+
+}; 
+
+
