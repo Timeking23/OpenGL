@@ -2,6 +2,7 @@
 #include "glad/glad.h"
 #include <GLFW/glfw3.h>
 #include <iostream>
+
 GLFWwindow* initilize();
 void cleanup(GLFWwindow* window);
 
@@ -12,10 +13,10 @@ int main() {
     // Main loop
     while (!glfwWindowShouldClose(window)) {
         // Clear the screen
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClearColor(0.227, 0.886, 0.91, 1);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glViewport(0, 0, 800, 600);
+        // glViewport(0, 0, 800, 600);
         // Swap buffers and poll events
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -38,7 +39,6 @@ GLFWwindow* initilize()
     // Set OpenGL version to 4.6
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     GLFWwindow* window = glfwCreateWindow(640, 480, "My Title", NULL, NULL);
     if (!window) {
