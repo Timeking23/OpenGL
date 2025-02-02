@@ -1,5 +1,5 @@
 # OpenGL
 Compile command:
     python compiler.py
-    app.py
+    main.py
     
