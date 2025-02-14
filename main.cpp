@@ -2,45 +2,19 @@
 #include "glad/glad.h"
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <fstream>
+#include <string>
 
 GLFWwindow* initialize();
 void cleanup(GLFWwindow* window);
+GLuint createShaderProgram();
+GLuint LoadShader(const std::string& shaderPath, GLenum shaderType);
+void checkShaderCompileError(GLuint shaderID);
+void checkProgramLinkError(GLuint programID);
 
 #define numVAOs 1
 GLuint renderProgram;
 GLuint vao[numVAOs];
-
-GLuint createShaderProgram() {
-    const char *vertexshaderSource =
-    "#version 460\n"
-    "void main(void) {\n"
-    "   gl_Position = vec4(0.0, 0.0, 0.0, 1.0);\n"
-    "}";
-
-    const char *fragmentshaderSource =
-    "#version 460\n"
-    "out vec4 fragColor;\n"
-    "void main(void) {\n"
-    "   fragColor = vec4(1.0, 0.0, 0.0, 1.0);\n"
-    "}";
-
-    GLuint VertexShader = glCreateShader(GL_VERTEX_SHADER);
-    GLuint FragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-
-    glShaderSource(VertexShader, 1, &vertexshaderSource, NULL);
-    glShaderSource(FragmentShader, 1, &fragmentshaderSource, NULL);
-    glCompileShader(VertexShader);
-    glCompileShader(FragmentShader);
-
-    GLuint vfProgram = glCreateProgram();
-    glAttachShader(vfProgram, VertexShader);
-    glAttachShader(vfProgram, FragmentShader);
-    glLinkProgram(vfProgram);
-
-    glDeleteShader(VertexShader);
-    glDeleteShader(FragmentShader);
-    return vfProgram;
-}
 
 void init(GLFWwindow* window) {
     renderProgram = createShaderProgram();
@@ -50,9 +24,7 @@ void init(GLFWwindow* window) {
 
 void Display(GLFWwindow* window, double currentTime) {
     glUseProgram(renderProgram);
-    //glBindVertexArray(vao[0]);
-    glPointSize(300.0f);
-    glDrawArrays(GL_POINTS, 0, 1);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 
 int main() {
@@ -64,7 +36,7 @@ int main() {
     while (!glfwWindowShouldClose(window)) {
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
-
+        glViewport(0, 0, 1920, 1080);
         Display(window, glfwGetTime());
 
         glfwSwapBuffers(window);
@@ -104,4 +76,65 @@ GLFWwindow* initialize() {
 void cleanup(GLFWwindow* window) {
     glfwDestroyWindow(window);
     glfwTerminate();
+}
+
+GLuint createShaderProgram() {
+    GLuint vertexShader = LoadShader("shader/vShader.vert", GL_VERTEX_SHADER);
+    GLuint fragmentShader = LoadShader("shader/fShader.frag", GL_FRAGMENT_SHADER);
+
+    // Create shader program
+    GLuint shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+
+    checkProgramLinkError(shaderProgram);
+
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    return shaderProgram;
+}
+
+GLuint LoadShader(const std::string& shaderPath, GLenum shaderType) {
+    std::ifstream shaderFile(shaderPath);
+    if (!shaderFile.is_open()) {
+        std::cerr << "Error: Shader file not found: " << shaderPath << std::endl;
+        return 0;
+    }
+
+    std::string shaderCode, line;
+    while (std::getline(shaderFile, line)) {
+        shaderCode += line + "\n";
+    }
+    shaderFile.close();
+
+    GLuint shader = glCreateShader(shaderType);
+    const GLchar* shaderSource = shaderCode.c_str();
+    glShaderSource(shader, 1, &shaderSource, nullptr);
+    glCompileShader(shader);
+
+    checkShaderCompileError(shader);
+
+    return shader;
+}
+
+void checkShaderCompileError(GLuint shaderID) {
+    GLint success;
+    GLchar infoLog[512];
+    glGetShaderiv(shaderID, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(shaderID, 512, nullptr, infoLog);
+        std::cerr << "ERROR::SHADER::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+}
+
+void checkProgramLinkError(GLuint programID) {
+    GLint success;
+    GLchar infoLog[512];
+    glGetProgramiv(programID, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(programID, 512, nullptr, infoLog);
+        std::cerr << "ERROR::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+    }
 }

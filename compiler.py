@@ -25,6 +25,7 @@ def main():
 
     # Link the executable
     subprocess.run(["g++"] + object_files + ["-o", file_name, "-L", lib_dir, "-L.", "-lglad"] + lib, check=True)
+    subprocess.run(["./main"], check=True)
 
 if __name__ == "__main__":
     main()
