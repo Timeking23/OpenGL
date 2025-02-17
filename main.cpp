@@ -30,12 +30,12 @@ void Display(GLFWwindow* window, double currentTime) {
 int main() {
     GLFWwindow* window = initialize();
     if (!window) return -1;
-
     init(window);
 
     while (!glfwWindowShouldClose(window)) {
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+
         glViewport(0, 0, 1920, 1080);
         Display(window, glfwGetTime());
 
@@ -89,10 +89,8 @@ GLuint createShaderProgram() {
     glLinkProgram(shaderProgram);
 
     checkProgramLinkError(shaderProgram);
-
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
-
     return shaderProgram;
 }
 
@@ -102,7 +100,6 @@ GLuint LoadShader(const std::string& shaderPath, GLenum shaderType) {
         std::cerr << "Error: Shader file not found: " << shaderPath << std::endl;
         return 0;
     }
-
     std::string shaderCode, line;
     while (std::getline(shaderFile, line)) {
         shaderCode += line + "\n";
@@ -115,7 +112,6 @@ GLuint LoadShader(const std::string& shaderPath, GLenum shaderType) {
     glCompileShader(shader);
 
     checkShaderCompileError(shader);
-
     return shader;
 }
 
