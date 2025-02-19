@@ -16,6 +16,9 @@ void checkProgramLinkError(GLuint programID);
 GLuint renderProgram;
 GLuint vao[numVAOs];
 
+float x = 0.0f; //location of triangle on x axis
+float inc = 0.01f;// offset for the triangle
+
 void init(GLFWwindow* window) {
     renderProgram = createShaderProgram();
     glGenVertexArrays(numVAOs, vao);
@@ -23,9 +26,21 @@ void init(GLFWwindow* window) {
 }
 
 void Display(GLFWwindow* window, double currentTime) {
+    glClear(GL_DEPTH_BUFFER_BIT);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
     glUseProgram(renderProgram);
+
+    x += inc; // Move along the x-axis
+    if (x > 1.0f) inc = -0.01f; // Reverse direction
+    if (x < -1.0f) inc = 0.01f; // Reverse direction
+    GLuint offsetLoc = glGetUniformLocation(renderProgram, "offset");
+    glProgramUniform1f(renderProgram, offsetLoc, x);
+
     glDrawArrays(GL_TRIANGLES, 0, 3);
 }
+
 
 int main() {
     GLFWwindow* window = initialize();
@@ -78,6 +93,8 @@ void cleanup(GLFWwindow* window) {
     glfwTerminate();
 }
 
+
+//shader program
 GLuint createShaderProgram() {
     GLuint vertexShader = LoadShader("shader/vShader.vert", GL_VERTEX_SHADER);
     GLuint fragmentShader = LoadShader("shader/fShader.frag", GL_FRAGMENT_SHADER);
