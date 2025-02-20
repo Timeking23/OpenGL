@@ -1,153 +1,118 @@
-#define GLFW_INCLUDE_NONE
-#include "glad/glad.h"
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <string>
 #include <iostream>
 #include <fstream>
-#include <string>
+#include <cmath>
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include "utils/Utils.h"
 
-GLFWwindow* initialize();
-void cleanup(GLFWwindow* window);
-GLuint createShaderProgram();
-GLuint LoadShader(const std::string& shaderPath, GLenum shaderType);
-void checkShaderCompileError(GLuint shaderID);
-void checkProgramLinkError(GLuint programID);
+using namespace std;
 
 #define numVAOs 1
-GLuint renderProgram;
+#define numVBOs 2
+
+//Utils util = Utils();
+float cameraX, cameraY, cameraZ;
+float cubeLocX, cubeLocY, cubeLocZ;
+GLuint renderingProgram;
 GLuint vao[numVAOs];
+GLuint vbo[numVBOs];
 
-float x = 0.0f; //location of triangle on x axis
-float inc = 0.01f;// offset for the triangle
+// variable allocation for display
+GLuint mvLoc, projLoc;
+int width, height;
+float aspect;
+glm::mat4 pMat, vMat, mMat, mvMat;
 
-void init(GLFWwindow* window) {
-    renderProgram = createShaderProgram();
-    glGenVertexArrays(numVAOs, vao);
+void setupVertices(void) {
+    float vertexPositions[108] = {
+        -1.0f,  1.0f, -1.0f, -1.0f, -1.0f, -1.0f,  1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,  1.0f,  1.0f, -1.0f, -1.0f,  1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,  1.0f, -1.0f,  1.0f,  1.0f,  1.0f, -1.0f,
+         1.0f, -1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f, -1.0f,
+         1.0f, -1.0f,  1.0f, -1.0f, -1.0f,  1.0f,  1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f, -1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f, -1.0f, -1.0f, -1.0f, -1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f, -1.0f,  1.0f, -1.0f, -1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,  1.0f, -1.0f,  1.0f,  1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,  1.0f,  1.0f, -1.0f,  1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f, -1.0f,  1.0f,  1.0f, -1.0f,  1.0f, -1.0f,
+    };
+    glGenVertexArrays(1, vao);  // creates VAO and returns the integer ID
     glBindVertexArray(vao[0]);
+    glGenBuffers(numVBOs, vbo);  // creates VBO and returns the integer ID
+    
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPositions), vertexPositions, GL_STATIC_DRAW);
 }
 
-void Display(GLFWwindow* window, double currentTime) {
+void init (GLFWwindow* window) {
+    renderingProgram = Utils::createShaderProgram("shader/vShader.vert", "./shader/fShader.frag");
+    cameraX = 0.0f; cameraY = 0.0f; cameraZ = 8.0f;
+    cubeLocX = 0.0f; cubeLocY = -2.0f; cubeLocZ = 0.0f;
+    setupVertices();
+}
+
+void display(GLFWwindow* window, double currentTime) {
     glClear(GL_DEPTH_BUFFER_BIT);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    glUseProgram(renderProgram);
-
-    x += inc; // Move along the x-axis
-    if (x > 1.0f) inc = -0.01f; // Reverse direction
-    if (x < -1.0f) inc = 0.01f; // Reverse direction
-    GLuint offsetLoc = glGetUniformLocation(renderProgram, "offset");
-    glProgramUniform1f(renderProgram, offsetLoc, x);
-
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glUseProgram(renderingProgram);
+    
+    // get locations of uniforms in the shader program
+    mvLoc = glGetUniformLocation(renderingProgram, "mv_matrix");
+    projLoc = glGetUniformLocation(renderingProgram, "proj_matrix");
+    
+    // send matrix data to the uniform variables
+    glfwGetFramebufferSize(window, &width, &height);
+    aspect = (float)width / (float)height;
+    pMat = glm::perspective(1.0472f, aspect, 0.1f, 1000.0f); // 1.0472 radians == 60 degrees
+    
+    vMat = glm::translate(glm::mat4(1.0f), glm::vec3(-cameraX, -cameraY, -cameraZ));
+    mMat = glm::translate(glm::mat4(1.0f), glm::vec3(cubeLocX, cubeLocY, cubeLocZ));
+    mvMat = vMat * mMat;
+    
+    glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvMat));
+    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
+    
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);  // makes the 0th buffer "active"
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);  // associates 0th attribute with buffer
+    glEnableVertexAttribArray(0);  // enable the 0th vertex attribute
+    
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+    
+    glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 
-
-int main() {
-    GLFWwindow* window = initialize();
-    if (!window) return -1;
+int main(void) {
+    if (!glfwInit()) {
+        std::cerr << "Error initializing GLFW" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    
+    GLFWwindow* window = glfwCreateWindow(1920, 1080, "OpenGL", NULL, NULL);
+    if (!window) {
+        std::cerr << "Error creating GLFW window" << std::endl;
+        glfwTerminate();
+        exit(EXIT_FAILURE);
+    }
+    
+    glfwMakeContextCurrent(window);
+    glewInit();
+    
     init(window);
 
     while (!glfwWindowShouldClose(window)) {
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
-
-        glViewport(0, 0, 1920, 1080);
-        Display(window, glfwGetTime());
-
+        display(window, glfwGetTime());
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-    cleanup(window);
-    return 0;
-}
-
-GLFWwindow* initialize() {
-    if (!glfwInit()) {
-        std::cerr << "Failed to initialize GLFW" << std::endl;
-        return nullptr;
-    }
-
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    GLFWwindow* window = glfwCreateWindow(640, 480, "My Title", NULL, NULL);
-    if (!window) {
-        std::cerr << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
-        return nullptr;
-    }
-    glfwMakeContextCurrent(window);
-
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        std::cerr << "Failed to initialize OpenGL loader!" << std::endl;
-        glfwDestroyWindow(window);
-        glfwTerminate();
-        return nullptr;
-    }
-    return window;
-}
-
-void cleanup(GLFWwindow* window) {
+    
     glfwDestroyWindow(window);
     glfwTerminate();
-}
-
-
-//shader program
-GLuint createShaderProgram() {
-    GLuint vertexShader = LoadShader("shader/vShader.vert", GL_VERTEX_SHADER);
-    GLuint fragmentShader = LoadShader("shader/fShader.frag", GL_FRAGMENT_SHADER);
-
-    // Create shader program
-    GLuint shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-
-    checkProgramLinkError(shaderProgram);
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-    return shaderProgram;
-}
-
-GLuint LoadShader(const std::string& shaderPath, GLenum shaderType) {
-    std::ifstream shaderFile(shaderPath);
-    if (!shaderFile.is_open()) {
-        std::cerr << "Error: Shader file not found: " << shaderPath << std::endl;
-        return 0;
-    }
-    std::string shaderCode, line;
-    while (std::getline(shaderFile, line)) {
-        shaderCode += line + "\n";
-    }
-    shaderFile.close();
-
-    GLuint shader = glCreateShader(shaderType);
-    const GLchar* shaderSource = shaderCode.c_str();
-    glShaderSource(shader, 1, &shaderSource, nullptr);
-    glCompileShader(shader);
-
-    checkShaderCompileError(shader);
-    return shader;
-}
-
-void checkShaderCompileError(GLuint shaderID) {
-    GLint success;
-    GLchar infoLog[512];
-    glGetShaderiv(shaderID, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        glGetShaderInfoLog(shaderID, 512, nullptr, infoLog);
-        std::cerr << "ERROR::SHADER::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
-}
-
-void checkProgramLinkError(GLuint programID) {
-    GLint success;
-    GLchar infoLog[512];
-    glGetProgramiv(programID, GL_LINK_STATUS, &success);
-    if (!success) {
-        glGetProgramInfoLog(programID, 512, nullptr, infoLog);
-        std::cerr << "ERROR::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-    }
+    return 0;
 }

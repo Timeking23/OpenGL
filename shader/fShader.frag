@@ -1,7 +1,8 @@
-#version 460
-out vec4 fragColor;
+#version 410
+out vec4 color;
+uniform mat4 mv_matrix;
+uniform mat4 proj_matrix;
+
 void main(void) {
-    if (gl_FragCoord.x > 960)
-        fragColor = vec4(1.0, 0.0, 0.0, 1.0);
-    else fragColor = vec4(0.0, 1.0, 0.0, 1.0);
-};
+    color = vec4(1.0, 0.0, 0.0, 1.0);
+}
