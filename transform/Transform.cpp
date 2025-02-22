@@ -1,51 +1,37 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include "Transform.hpp"
 
-Transform::Transform() {}
+Transform transform;
 
-// builds and returns a translation matrix
-mat4 Transform::buildTranslate(float x, float y, float z) {
-    mat4 trans = mat4(1.0, 0.0, 0.0, 0.0,
-                      0.0, 1.0, 0.0, 0.0,
-                      0.0, 0.0, 1.0, 0.0,
-                      x,   y,   z,   1.0);
-    return trans;
-}
+// In your rendering loop:
+GLuint shaderProgram = // Your shader program
+float angleX = 45.0f;  // Example angle for rotation
+float angleY = 30.0f;
+float angleZ = 60.0f;
+float tx = 1.0f, ty = 2.0f, tz = 3.0f;  // Example translation
 
-// builds and returns a matrix that performs a rotation around the X axis
-mat4 Transform::buildRotateX(float rad) {
-    mat4 xrot = mat4(1.0, 0.0,      0.0,       0.0,
-                     0.0, cos(rad), -sin(rad), 0.0,
-                     0.0, sin(rad), cos(rad),  0.0,
-                     0.0, 0.0,      0.0,       1.0);
-    return xrot;
-}
+// Call transformation functions from Transform class
+glm::mat4 localRotX = transform.buildRotateX(glm::radians(angleX));
+glm::mat4 localRotY = transform.buildRotateY(glm::radians(angleY));
+glm::mat4 localRotZ = transform.buildRotateZ(glm::radians(angleZ));
+glm::mat4 localTrans = transform.buildTranslate(tx, ty, tz);
 
-// builds and returns a matrix that performs a rotation around the Y axis
-mat4 Transform::buildRotateY(float rad) {
-    mat4 yrot = mat4(cos(rad),  0.0, sin(rad), 0.0,
-                     0.0,       1.0, 0.0,      0.0,
-                     -sin(rad), 0.0, cos(rad), 0.0,
-                     0.0,       0.0, 0.0,      1.0);
-    return yrot;
-}
+// Combine transformations (multiply matrices)
+glm::mat4 transformationMatrix = localTrans * localRotX * localRotY * localRotZ;
 
-// builds and returns a matrix that performs a rotation around the Z axis
-mat4 Transform::buildRotateZ(float rad) {
-    mat4 zrot = mat4(cos(rad), -sin(rad), 0.0, 0.0,
-                     sin(rad), cos(rad),  0.0, 0.0,
-                     0.0,      0.0,       1.0, 0.0,
-                     0.0,      0.0,       0.0, 1.0);
-    return zrot;
-}
+// Now pass the combined transformation matrix to the shader
+GLuint transMatrixLoc = glGetUniformLocation(shaderProgram, "transformationMatrix");
+glUniformMatrix4fv(transMatrixLoc, 1, GL_FALSE, &transformationMatrix[0][0]);
 
-// builds and returns a scale matrix
-mat4 Transform::buildScale(float x, float y, float z) {
-    mat4 scale = mat4(x,   0.0, 0.0, 0.0,
-                      0.0, y,   0.0, 0.0,
-                      0.0, 0.0, z,   0.0,
-                      0.0, 0.0, 0.0, 1.0);
-    return scale;
-}
+// Pass the view and projection matrices as well
+GLuint mvMatrixLoc = glGetUniformLocation(shaderProgram, "v_matrix");
+GLuint projMatrixLoc = glGetUniformLocation(shaderProgram, "proj_matrix");
+
+glUniformMatrix4fv(mvMatrixLoc, 1, GL_FALSE, &viewMatrix[0][0]);  // viewMatrix should be set elsewhere in your code
+glUniformMatrix4fv(projMatrixLoc, 1, GL_FALSE, &projMatrix[0][0]);  // projMatrix should be set elsewhere in your code
+
+// Draw your object (using transformed vertices)
+glDrawArrays(GL_TRIANGLES, 0, numVertices);

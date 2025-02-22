@@ -1,10 +1,8 @@
-#version 410
+#version 460
 
-in vec4 varyColor;
-out vec4 color;
-uniform mat4 mv_matrix;
-uniform mat4 proj_matrix;
+in vec4 varyingColor;  // Match vertex shader's output
+out vec4 color;        // Fragment shader output
 
 void main(void) {
-    color = varyColor;
+    color = varyingColor;  // Use the correct variable passed from vertex shader
 }
