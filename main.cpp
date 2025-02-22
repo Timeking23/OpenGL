@@ -25,9 +25,9 @@ GLuint vbo[numVBOs];
 GLuint mvLoc, projLoc;
 int width, height;
 float aspect;
-glm::mat4 pMat, vMat, mMat, mvMat;
+glm::mat4 pMat, vMat, tMat, rMat, mMat, mvMat;
 
-void setupVertices(void) {
+void setupVertices() {
     float vertexPositions[108] = {
         -1.0f,  1.0f, -1.0f, -1.0f, -1.0f, -1.0f,  1.0f, -1.0f, -1.0f,
          1.0f, -1.0f, -1.0f,  1.0f,  1.0f, -1.0f, -1.0f,  1.0f, -1.0f,
@@ -59,6 +59,7 @@ void init (GLFWwindow* window) {
 
 void display(GLFWwindow* window, double currentTime) {
     glClear(GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT);
     glUseProgram(renderingProgram);
     
     // get locations of uniforms in the shader program
@@ -68,12 +69,22 @@ void display(GLFWwindow* window, double currentTime) {
     // send matrix data to the uniform variables
     glfwGetFramebufferSize(window, &width, &height);
     aspect = (float)width / (float)height;
-    pMat = glm::perspective(1.0472f, aspect, 0.1f, 1000.0f); // 1.0472 radians == 60 degrees
+    pMat = glm::perspective(glm::radians(95.0f), aspect, 0.1f, 1000.0f); // radians == 95 degrees fov
     
     vMat = glm::translate(glm::mat4(1.0f), glm::vec3(-cameraX, -cameraY, -cameraZ));
     mMat = glm::translate(glm::mat4(1.0f), glm::vec3(cubeLocX, cubeLocY, cubeLocZ));
     mvMat = vMat * mMat;
     
+
+    tMat = glm::translate(glm::mat4(1.0f), glm::vec3(sin(5*currentTime)*2, cos(5*currentTime)*2, tan(currentTime)*2));
+    // Apply all rotations around the X, Y, and Z axes
+    rMat = glm::rotate(glm::mat4(1.0f), (float)currentTime, glm::vec3(0.0f, 1.0f, 0.0f));
+    rMat = glm::rotate(rMat, (float)currentTime, glm::vec3(1.0f, 0.0f, 0.0f));
+    rMat = glm::rotate(rMat, (float)currentTime, glm::vec3(0.0f, 0.0f, 1.0f));
+    mMat = tMat * rMat;  // rotation -> translation
+    mvMat = vMat * mMat;
+
+
     glUniformMatrix4fv(mvLoc, 1, GL_FALSE, glm::value_ptr(mvMat));
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(pMat));
     
