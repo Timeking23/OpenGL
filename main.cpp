@@ -1,62 +1,43 @@
-#define GLFW_INCLUDE_NONE
-#include "glad/glad.h"
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 
-GLFWwindow* initilize();
-void cleanup(GLFWwindow* window);
-
-int main() {
-
-    GLFWwindow* window = initilize(); // Capture the returned window   
-
-    // Main loop
-    while (!glfwWindowShouldClose(window)) {
-        // Clear the screen
-        glClearColor(0.227, 0.886, 0.91, 1);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        // glViewport(0, 0, 800, 600);
-        // Swap buffers and poll events
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-    }
-
-    cleanup(window);
+#define WIDTH 1920 
+#define HEIGHT 1080
+void error_callback(int error, const char* description)
+{
+    std::cerr << "error code (" << error <<") description: " << description << "\n";
 }
 
+int main(){
+    glfwSetErrorCallback(error_callback);
 
-
-
-
-
-GLFWwindow* initilize()
-{
-    if (!glfwInit()) {
-    std::cerr << "Failed to initialize GLFW" << std::endl;
+    if (!glfwInit())
+    {
+        // Initialization failed
     }
-
-    // Set OpenGL version to 4.6
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-
-    GLFWwindow* window = glfwCreateWindow(640, 480, "My Title", NULL, NULL);
-    if (!window) {
-        std::cerr << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
+    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "My Title", NULL, NULL);
+    if (!window)
+    {
+        std::cout << "window failed to create\n";
+        // Window or OpenGL context creation failed
     }
-
     glfwMakeContextCurrent(window);
+    gladLoadGL();
 
-    // Load OpenGL function pointers
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        std::cerr << "Failed to initialize OpenGL loader!" << std::endl;
+    while (!glfwWindowShouldClose(window))
+    {
+        glViewport(0, 0, WIDTH, HEIGHT);
+        // Keep running
+
     }
 
-    return window;
-}
 
-void cleanup(GLFWwindow* window){    // Cleanup
     glfwDestroyWindow(window);
     glfwTerminate();
+
+    
+
 }
