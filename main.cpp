@@ -1,5 +1,5 @@
 #define GLFW_INCLUDE_NONE
-#include "glad/glad.h"
+#include "dependencies/include/glad/glad.h"
 #include <GLFW/glfw3.h>
 #include <iostream>
 
@@ -7,21 +7,28 @@ GLFWwindow* initialize();
 void cleanup(GLFWwindow* window);
 
 #define numVAOs 1
-GLuint renderProgram;
+GLuint renderShaderProgram;
 GLuint vao[numVAOs];
 
 GLuint createShaderProgram() {
     const char *vertexshaderSource =
     "#version 460\n"
-    "void main(void) {\n"
-    "   gl_Position = vec4(0.0, 0.0, 0.0, 1.0);\n"
+    "out vec4 VaryColor;"
+    "void main(void) {\n"    
+    "   if (gl_VertexID == 0)     {gl_Position = vec4(0.0f,  0.5f, 0.0f, 1.0f); VaryColor = vec4(1.0, 0.0, 0.0, 1.0);} // Red\n"
+    "   else if(gl_VertexID == 1) {gl_Position = vec4(0.5f,  0.0f, 0.0f, 1.0f); VaryColor = vec4(0.0, 1.0, 0.0, 1.0);} // Green\n"
+    "   else if (gl_VertexID == 2){gl_Position = vec4(-0.5f, 0.0f, 0.0f, 1.0f); VaryColor = vec4(0.0, 0.0, 1.0, 1.0);} // Blue\n"
+    "   else if (gl_VertexID == 3){gl_Position = vec4(0.5f, 0.0f, 0.0f, 1.0f); VaryColor = vec4(0.0, 1.0, 0.0, 1.0);}\n"
+    "   else if (gl_VertexID == 4){gl_Position = vec4(0.0f, -0.5f, 0.0f, 1.0f); VaryColor = vec4(1.0, 0.0, 0.0, 1.0);}\n"
+    "   else if (gl_VertexID == 5){gl_Position = vec4(-0.5f, 0.0f, 0.0f, 1.0f); VaryColor = vec4(0.0, 0.0, 1.0, 1.0);}\n"
     "}";
 
     const char *fragmentshaderSource =
     "#version 460\n"
+    "in vec4 VaryColor;\n"
     "out vec4 fragColor;\n"
     "void main(void) {\n"
-    "   fragColor = vec4(1.0, 0.0, 0.0, 1.0);\n"
+    "   fragColor = VaryColor;\n"
     "}";
 
     GLuint VertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -31,6 +38,7 @@ GLuint createShaderProgram() {
     glShaderSource(FragmentShader, 1, &fragmentshaderSource, NULL);
     glCompileShader(VertexShader);
     glCompileShader(FragmentShader);
+    
 
     GLuint vfProgram = glCreateProgram();
     glAttachShader(vfProgram, VertexShader);
@@ -43,30 +51,28 @@ GLuint createShaderProgram() {
 }
 
 void init(GLFWwindow* window) {
-    renderProgram = createShaderProgram();
+    renderShaderProgram = createShaderProgram();
     glGenVertexArrays(numVAOs, vao);
     glBindVertexArray(vao[0]);
 }
 
 void Display(GLFWwindow* window, double currentTime) {
-    glUseProgram(renderProgram);
-    //glBindVertexArray(vao[0]);
-    glPointSize(300.0f);
-    glDrawArrays(GL_POINTS, 0, 1);
+    glViewport(0,0,1920,1080);
+    glUseProgram(renderShaderProgram);
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
 int main() {
-    GLFWwindow* window = initialize();
+    GLFWwindow* window = initialize(); //initilize glfw and glad
     if (!window) return -1;
 
-    init(window);
+    init(window); //compile shader
 
     while (!glfwWindowShouldClose(window)) {
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClearColor(0.2f, 0.1f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
-
         Display(window, glfwGetTime());
-
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
